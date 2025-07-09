@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voila Price Checker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Favicon links -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon_io/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon_io/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon_io/favicon-16x16.png') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon_io/favicon.ico') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='favicon_io/site.webmanifest') }}">
+
+<style>
+    :root {
+        --voila-cyan: #00d9f9;
+        --voila-dark-green: #00483b;
+        --voila-orange: #fc6c2b;
+        --voila-white: #ffffff;
+        --voila-very-dark-green: #002f2c;
+        --voila-muted-teal: #2a6762;
+        --voila-light-bg: #f8f9fa;
+        --voila-gray: #6c757d;
+        --voila-red: #dc3545;
+        --voila-light-red: #f8d7da;
+        --voila-dark-red: #842029;
+        --voila-yellow: #ffc107;
+        --voila-light-yellow: #fff3cd;
+        --voila-blue: #0d6efd;
+        --voila-light-blue: #cfe2ff;
+    }
+
+    body {
+        padding-bottom: 40px;
+        margin: 0;
+        background-color: var(--voila-light-bg);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--voila-very-dark-green);
+    }
+
+    .container {
+        max-width: 1200px;
+    }
+
+    /* Navigation Bar Styles */
+    .navbar {
+        background-color: var(--voila-very-dark-green);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 1rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 10px 10px;
+    }
+
+    .navbar-brand {
+        font-weight: bold;
+        color: var(--voila-cyan) !important;
+    }
+
+    .logo-text {
+        font-size: 2.2rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+    }
+
+    .brand-subtitle {
+        color: var(--voila-white);
+        font-size: 0.9rem;
+        opacity: 0.9;
+        letter-spacing: 0.5px;
+    }
+
+    /* Tab Navigation */
+    .nav-tabs {
+        margin-bottom: 20px;
+        border-bottom: 2px solid var(--voila-dark-green);
+    }
+
+    .nav-tabs .nav-link {
+        color: var(--voila-dark-green);
+        border: none;
+        border-bottom: 3px solid transparent;
+        font-weight: 500;
+        padding: 0.75rem 1.5rem;
+        margin-right: 10px;
+        border-radius: 0;
+        transition: all 0.2s ease;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        background-color: rgba(0, 72, 59, 0.05);
+    }
+
+    .nav-tabs .nav-link.active {
+        color: var(--voila-dark-green);
+        background-color: transparent;
+        border-bottom: 3px solid var(--voila-cyan);
+        font-weight: 600;
+    }
+
+    /* Product Card Styles */
+    .product-card {
+        margin-bottom: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+        border-radius: 12px;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+        border: none;
+        overflow: hidden;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .product-img {
+        height: 200px;
+        object-fit: contain;
+        padding: 10px;
+        transition: transform 0.3s ease;
+    }
+
+    .product-card:hover .product-img {
+        transform: scale(1.05);
+    }
+
+    /* Not Found Card Styles */
+    .not-found-card {
+        background-color: var(--voila-light-red);
+        border-left: 5px solid var(--voila-red);
+    }
+
+    .not-found-icon {
+        font-size: 4rem;
+        color: var(--voila-red);
+        opacity: 0.7;
+    }
+
+    .not-found-title {
+        font-weight: 600;
+        color: var(--voila-dark-red);
+    }
+
+    .not-found-message {
+        color: var(--voila-dark-red);
+    }
+
+    /* Session ID Section */
+    .session-id-section {
+        background-color: #e9ecef;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--voila-cyan);
+        transition: all 0.3s ease;
+    }
+
+    .session-id-section:focus-within {
+        box-shadow: 0 0 0 0.25rem rgba(0, 217, 249, 0.25);
+        border-color: var(--voila-dark-green);
+    }
+
+    /* Region Info Banner */
+    .region-info-banner {
+        background-color: var(--voila-dark-green);
+        color: var(--voila-white);
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        border-left: 4px solid var(--voila-cyan);
+        animation: fadeIn 0.5s ease;
+    }
+
+    .region-icon {
+        font-size: 1.5rem;
+        margin-right: 15px;
+        color: var(--voila-cyan);
+    }
+
+    /* Instructions */
+    .instructions {
+        background-color: #fff;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--voila-dark-green);
+    }
+
+    /* Price Tag Styles */
+    .price-tag {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--voila-dark-green);
+    }
+
+    .original-price {
+        text-decoration: line-through;
+        color: var(--voila-gray);
+        font-size: 0.9rem;
+    }
+
+    .discount-badge {
+        background-color: var(--voila-orange) !important;
+        color: white;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        margin-left: 5px;
+        font-weight: bold;
+    }
+
+    .scene-badge {
+        background-color: #6f42c1;
+        color: white;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        display: inline-block;
+    }
+
+    .offer-badge {
+        background-color: var(--voila-orange);
+        color: white;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        display: inline-block;
+    }
+
+    /* Search Container */
+    .search-container {
+        background-color: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .search-container:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Loading Spinner */
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        margin: 20px 0;
+        padding: 20px;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        animation: fadeIn 0.5s ease;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+        margin-top: 15px;
+        display: none;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .progress {
+        height: 24px;
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: #e9ecef;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .progress-bar {
+        background-color: var(--voila-dark-green);
+        color: var(--voila-white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+        transition: width 0.3s ease;
+    }
+
+    /* Duplicate Message */
+    .duplicate-message {
+        background-color: var(--voila-light-yellow);
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border-left: 4px solid var(--voila-yellow);
+        animation: fadeIn 0.5s ease;
+    }
+
+    .duplicate-list {
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 0.9rem;
+        padding: 10px;
+        background: #fff;
+        border-radius: 5px;
+        margin-top: 8px;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    /* Form Elements Styles */
+    .form-control {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: var(--voila-muted-teal);
+        box-shadow: 0 0 0 0.25rem rgba(0, 217, 249, 0.25);
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: var(--voila-dark-green);
+        margin-bottom: 0.5rem;
+    }
+
+    /* Clean button */
+    .clear-search-wrapper {
+        position: relative;
+    }
+
+    #clearSearchButton {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        background: rgba(255,255,255,0.8);
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--voila-gray);
+        padding: 0;
+        transition: all 0.2s ease;
+        z-index: 5;
+    }
+
+    #clearSearchButton:hover {
+        background: rgba(220,53,69,0.1);
+        color: var(--voila-red);
+    }
+
+    /* Search Type Toggle */
+    .search-type-toggle {
+        margin-bottom: 20px;
+    }
+
+    .search-type-toggle .btn-check:checked + .btn {
+        background-color: var(--voila-dark-green);
+        color: white;
+        border-color: var(--voila-dark-green);
+    }
+
+    .search-type-toggle .btn {
+        border-color: var(--voila-dark-green);
+        color: var(--voila-dark-green);
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .search-type-toggle .btn:hover {
+        background-color: rgba(0, 72, 59, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .search-type-toggle .btn i {
+        margin-right: 8px;
+    }
+
+    .search-placeholder {
+        font-style: italic;
+        color: #adb5bd;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+
+    /* Button Styles */
+    .btn-primary {
+        background-color: var(--voila-dark-green);
+        border-color: var(--voila-dark-green);
+        padding: 0.6rem 1.2rem;
+        font-weight: 500;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover, .btn-primary:focus {
+        background-color: var(--voila-muted-teal);
+        border-color: var(--voila-muted-teal);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-success {
+        background-color: var(--voila-muted-teal);
+        border-color: var(--voila-muted-teal);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .btn-success:hover, .btn-success:focus {
+        background-color: #225752;
+        border-color: #225752;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Cancel button */
+    .btn-outline-danger {
+        transition: all 0.2s ease;
+    }
+
+    .btn-outline-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Results Section */
+    .results-card {
+        overflow: visible;
+        border-radius: 12px;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+        margin-bottom: 20px;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .results-header {
+        background-color: var(--voila-dark-green);
+        color: var(--voila-white);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .results-header h5 {
+        margin-bottom: 0;
+        font-weight: 600;
+    }
+
+    .parsed-terms {
+        background-color: #e9ecef;
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border-left: 4px solid var(--voila-muted-teal);
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .parsed-terms h6 {
+        color: var(--voila-dark-green);
+        margin-bottom: 10px;
+    }
+
+    .parsed-terms ul {
+        margin-bottom: 0;
+        padding-left: 20px;
+    }
+
+    .parsed-terms-toggle {
+        cursor: pointer;
+        color: var(--voila-muted-teal);
+        text-decoration: underline;
+    }
+
+    /* Filter Controls */
+    .filter-controls {
+        background-color: #f1f3f5;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        animation: fadeIn 0.5s ease;
+        border-left: 3px solid var(--voila-dark-green);
+    }
+
+    .filter-label {
+        font-weight: 600;
+        margin-right: 10px;
+        color: var(--voila-dark-green);
+    }
+
+    .filter-btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 8px;
+    }
+
+    .filter-btn-group .btn {
+        flex: 1;
+        min-width: 100px;
+        margin-bottom: 5px;
+    }
+
+    /* Export Modal */
+    .modal-header {
+        background-color: var(--voila-dark-green);
+        color: white;
+    }
+
+    .modal-header .btn-close {
+        filter: invert(1) brightness(200%);
+    }
+
+    .export-option {
+        margin-bottom: 10px;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s;
+    }
+
+    .export-option:hover {
+        background-color: #f8f9fa;
+        border-color: var(--voila-cyan);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .export-option input {
+        margin-right: 10px;
+    }
+
+    .export-option label {
+        width: 100%;
+        cursor: pointer;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Alerts */
+    .alert {
+        border-radius: 8px;
+        animation: fadeIn 0.5s ease;
+    }
+
+    /* Real-time results styling */
+    .new-result {
+        animation: newResultFadeIn 0.6s ease;
+        border: 2px solid var(--voila-cyan);
+    }
+
+    @keyframes newResultFadeIn {
+        0% {
+            opacity: 0;
+            transform: translateY(20px);
+            border-color: var(--voila-cyan);
+        }
+        50% {
+            border-color: var(--voila-cyan);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+            border-color: transparent;
+        }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(0, 72, 59, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(0, 72, 59, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(0, 72, 59, 0);
+        }
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 767.98px) {
+        .card-header {
+            padding: 0.85rem 1.25rem;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+        }
+
+        .results-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .export-btn {
+            align-self: flex-start;
+        }
+
+        .search-type-toggle .btn {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .search-placeholder {
+            font-size: 0.8rem;
+        }
+
+        .nav-tabs .nav-link {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .filter-btn-group {
+            flex-direction: column;
+        }
+
+        .filter-btn-group .btn {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+    }
+</style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <span class="logo-text"><i class="fas fa-shopping-cart me-2"></i>voilà 🍑</span>
+                <small class="d-block brand-subtitle">Regional Price Checker</small>
+            </a>
+        </div>
+    </nav>
+<div class="container">
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-tab-pane" type="button" role="tab" aria-controls="search-tab-pane" aria-selected="true">
+                <i class="fas fa-search me-2"></i>Search
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="instructions-tab" data-bs-toggle="tab" data-bs-target="#instructions-tab-pane" type="button" role="tab" aria-controls="instructions-tab-pane" aria-selected="false">
+                <i class="fas fa-info-circle me-2"></i>Instructions
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="myTabContent">
+        <!-- Search Tab -->
+        <div class="tab-pane fade show active" id="search-tab-pane" role="tabpanel" aria-labelledby="search-tab" tabindex="0">
+            <!-- Session ID Input -->
+            <div class="search-container">
+                <div class="session-id-section">
+                    <div class="mb-3">
+                        <label for="sessionId" class="form-label">
+                            <i class="fas fa-key me-2"></i>Voila Session ID:
+                            <span class="badge bg-info ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Log in to Voila.ca, select a pickup time in the region you are searching for, open developer tools (F12), go to Application tab, find 'global_sid' cookie and copy its value">
+                                <i class="fas fa-info-circle"></i> How to get it
+                            </span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user-lock"></i></span>
+                            <input type="text" class="form-control" id="sessionId" placeholder="Paste your global_sid here">
+                            <button class="btn btn-outline-secondary" type="button" id="checkRegionButton">
+                                <i class="fas fa-map-marker-alt me-1"></i> Check Region
+                            </button>
+                        </div>
+                        <small class="form-text text-muted mt-1">
+                            <i class="fas fa-shield-alt me-1"></i> Your session ID is only used to query Voila's API and is not stored
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Region Info Banner (Initially Hidden) -->
+                <div id="regionInfoBanner" class="region-info-banner" style="display: none;">
+                    <i class="fas fa-map-marker-alt region-icon"></i>
+                    <div id="regionText"></div>
+                </div>
+
+                <!-- Duplicate Message (Initially Hidden) -->
+                <div id="duplicateMessage" class="duplicate-message" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-clone me-2"></i>
+                        <span id="duplicateText"></span>
+                    </div>
+                    <div id="duplicateList" class="duplicate-list mt-2" style="display: none;"></div>
+                    <button id="toggleDuplicateList" class="btn btn-sm btn-outline-warning mt-2" style="display: none;">
+                        <i class="fas fa-eye me-1"></i> Show Duplicates
+                    </button>
+                </div>
+
+                <!-- Search Type Toggle -->
+                <div class="search-type-toggle mb-4">
+                    <div class="form-label mb-2">
+                        <i class="fas fa-filter me-2"></i>Search Type:
+                    </div>
+                    <div class="btn-group w-100" role="group" aria-label="Search type">
+                        <input type="radio" class="btn-check" name="searchType" id="articleSearch" value="article" autocomplete="off" checked>
+                        <label class="btn btn-outline-primary" for="articleSearch">
+                            <i class="fas fa-barcode"></i> Article Search
+                            <div class="search-placeholder">Search for specific article codes (e.g. 123456EA)</div>
+                        </label>
+
+                        <input type="radio" class="btn-check" name="searchType" id="genericSearch" value="generic" autocomplete="off">
+                        <label class="btn btn-outline-primary" for="genericSearch">
+                            <i class="fas fa-search"></i> Generic Search
+                            <div class="search-placeholder">Search for general terms (e.g. Water, Coffee)</div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Search Form -->
+                <div class="mb-3 position-relative">
+                    <label for="searchTerms" class="form-label">
+                        <span id="searchTermsLabel">Article Codes:</span>
+                    </label>
+                    <div class="clear-search-wrapper">
+                        <textarea class="form-control" id="searchTerms" rows="6" placeholder="Paste article codes in any format (comma-separated, one per line, etc.)"></textarea>
+                        <button type="button" id="clearSearchButton" class="btn-close" aria-label="Clear search"></button>
+                    </div>
+                </div>
+
+                <!-- Generic Search Options (Initially Hidden) -->
+                <div id="genericSearchOptions" class="mb-3" style="display: none;">
+                    <label for="resultLimit" class="form-label">
+                        <i class="fas fa-list-ol me-1"></i> Results per Search Term:
+                    </label>
+                    <select class="form-select" id="resultLimit">
+                        <option value="5">5 results per term</option>
+                        <option value="10" selected>10 results per term</option>
+                        <option value="20">20 results per term</option>
+                        <option value="50">50 results per term (maximum)</option>
+                    </select>
+                </div>
+
+                <!-- Button Group -->
+                <div class="d-flex gap-2">
+                    <button id="searchButton" class="btn btn-primary flex-grow-1 mb-3">
+                        <i class="fas fa-search me-2"></i>Search Products
+                    </button>
+                    <button id="clearAllButton" class="btn btn-outline-secondary mb-3">
+                        <i class="fas fa-trash-alt me-2"></i>Clear All
+                    </button>
+                </div>
+                <button id="exportButton" class="btn btn-success w-100" style="display: none;">
+                    <i class="fas fa-file-export me-2"></i>Export to Excel
+                </button>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2" id="loadingMessage">Searching products...</p>
+
+                <!-- Real-time Progress Bar -->
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress mb-2">
+                        <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                    </div>
+                    <p id="progressStatusText" class="text-center mt-2">Processing your request...</p>
+
+                    <!-- Cancel Button -->
+                    <div class="text-center mt-3">
+                        <button class="btn btn-sm btn-outline-danger" id="cancelSearchButton">
+                            <i class="fas fa-times-circle me-1"></i> Cancel Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="searchInfo" class="results-card" style="display: none;">
+                <div class="results-header">
+                    <h5 id="searchResultsTitle">Search Results</h5>
+                    <span id="resultStats" class="badge bg-light text-dark"></span>
+                </div>
+                <div class="card-body">
+                    <!-- Parsed Terms Section (Initially Hidden) -->
+                    <div id="parsedTermsSection" class="parsed-terms" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="fas fa-list me-2"></i>Parsed Search Terms</h6>
+                            <span id="hideTermsToggle" class="parsed-terms-toggle">
+                                <i class="fas fa-eye-slash me-1"></i>Hide
+                            </span>
+                        </div>
+                        <div id="parsedTermsList" class="mt-2"></div>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div id="filterControls" class="filter-controls" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="filter-label mb-1">
+                                <i class="fas fa-filter me-2"></i>Show:
+                            </div>
+                            <button id="resetFilters" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-undo me-1"></i>Reset Filters
+                            </button>
+                        </div>
+
+                        <div class="filter-btn-group">
+                            <input type="radio" class="btn-check" name="productFilter" id="filterAll" autocomplete="off" checked>
+                            <label class="btn btn-outline-secondary" for="filterAll">
+                                <i class="fas fa-border-all me-1"></i>All Products
+                            </label>
+
+                            <input type="radio" class="btn-check" name="productFilter" id="filterFound" autocomplete="off">
+                            <label class="btn btn-outline-success" for="filterFound">
+                                <i class="fas fa-check-circle me-1"></i>Found Products
+                            </label>
+
+                            <input type="radio" class="btn-check" name="productFilter" id="filterNotFound" autocomplete="off">
+                            <label class="btn btn-outline-danger" for="filterNotFound">
+                                <i class="fas fa-times-circle me-1"></i>Not Found
+                            </label>
+
+                            <input type="radio" class="btn-check" name="productFilter" id="filterAvailable" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="filterAvailable">
+                                <i class="fas fa-shopping-basket me-1"></i>Available
+                            </label>
+
+                            <input type="radio" class="btn-check" name="productFilter" id="filterUnavailable" autocomplete="off">
+                            <label class="btn btn-outline-warning" for="filterUnavailable">
+                                <i class="fas fa-ban me-1"></i>Unavailable
+                            </label>
+
+                            <input type="radio" class="btn-check" name="productFilter" id="filterDiscounted" autocomplete="off">
+                            <label class="btn btn-outline-info" for="filterDiscounted">
+                                <i class="fas fa-tag me-1"></i>Discounted
+                            </label>
+                        </div>
+
+                        <!-- Sort Options -->
+                        <div class="mt-3">
+                            <div class="filter-label mb-1">
+                                <i class="fas fa-sort me-2"></i>Sort By:
+                            </div>
+                            <select class="form-select" id="sortOptions">
+                                <option value="default">Default Order</option>
+                                <option value="priceAsc">Price: Low to High</option>
+                                <option value="priceDesc">Price: High to Low</option>
+                                <option value="discountDesc">Discount: Highest First</option>
+                                <option value="nameAsc">Name: A to Z</option>
+                                <option value="nameDesc">Name: Z to A</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="resultsContainer" class="row"></div>
+
+                    <!-- No Results Message -->
+                    <div id="noResultsMessage" class="alert alert-warning" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No products match the current filter. Try changing your filter criteria.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions Tab -->
+        <div class="tab-pane fade" id="instructions-tab-pane" role="tabpanel" aria-labelledby="instructions-tab" tabindex="0">
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle me-2"></i>How to Use</h4>
+
+                <div class="alert alert-info mb-4">
+    <h5><i class="fas fa-key me-2"></i>Getting Started:</h5>
+    <ol>
+        <li>Log in to your Voila.ca account</li>
+        <li>Select a pickup time in the region you are searching for</li>
+        <li>Open Developer Tools (press F12), go to the Application tab</li>
+        <li>In the left sidebar, expand Cookies and click on voila.ca</li>
+        <li>Look for "global_sid" cookie and copy its value</li>
+        <li>Paste the session ID in the input field</li>
+        <li>Enter your search terms (article codes or general product names)</li> 
+        <li>Click "Search Products"</li>
+    </ol>
+</div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-barcode me-2"></i>Article Search</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Use when you have specific product codes. The tool automatically detects formats like:</p>
+                        <ul>
+                            <li>Comma-separated: <code>123456EA, 789012EA</code></li>
+                            <li>One code per line</li>
+                            <li>Continuous list: <code>123456EA789012EA</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Generic Search</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Use when searching for general terms like "Water" or "Coffee".</p>
+                        <p>Choose how many results you want per term (up to 50).</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Important:</strong> Your session ID is never stored or shared, but using this tool will count as activity on your Voila account.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="fas fa-file-export me-2"></i>Export Options
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Select what to include in the export:</p>
+
+                <div class="export-option">
+                    <input type="radio" name="exportOption" id="exportAll" checked>
+                    <label for="exportAll">
+                        <i class="fas fa-border-all text-primary me-2"></i>
+                        <span>
+                            <strong>All Products</strong>
+                            <div class="small text-muted">Export all found and not found products</div>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="export-option">
+                    <input type="radio" name="exportOption" id="exportFound">
+                    <label for="exportFound">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>
+                            <strong>Found Products Only</strong>
+                            <div class="small text-muted">Export only products that were found</div>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="export-option">
+                    <input type="radio" name="exportOption" id="exportNotFound">
+                    <label for="exportNotFound">
+                        <i class="fas fa-times-circle text-danger me-2"></i>
+                        <span>
+                            <strong>Not Found Products Only</strong>
+                            <div class="small text-muted">Export only products that were not found</div>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="export-option">
+                    <input type="radio" name="exportOption" id="exportCurrentView">
+                    <label for="exportCurrentView">
+                        <i class="fas fa-filter text-secondary me-2"></i>
+                        <span>
+                            <strong>Current View (As Filtered)</strong>
+                            <div class="small text-muted">Export only products matching current filters</div>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="confirmExport">
+                    <i class="fas fa-file-export me-1"></i>Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variables
+        const searchButton = document.getElementById('searchButton');
+        const exportButton = document.getElementById('exportButton');
+        const confirmExportButton = document.getElementById('confirmExport');
+        const clearSearchButton = document.getElementById('clearSearchButton');
+        const clearAllButton = document.getElementById('clearAllButton');
+        const cancelSearchButton = document.getElementById('cancelSearchButton');
+        const checkRegionButton = document.getElementById('checkRegionButton');
+        const resetFiltersButton = document.getElementById('resetFilters');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressStatusText = document.getElementById('progressStatusText');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const searchInfo = document.getElementById('searchInfo');
+        const resultStats = document.getElementById('resultStats');
+        const searchResultsTitle = document.getElementById('searchResultsTitle');
+        const regionInfoBanner = document.getElementById('regionInfoBanner');
+        const regionText = document.getElementById('regionText');
+        const parsedTermsSection = document.getElementById('parsedTermsSection');
+        const parsedTermsList = document.getElementById('parsedTermsList');
+        const hideTermsToggle = document.getElementById('hideTermsToggle');
+        const filterControls = document.getElementById('filterControls');
+        const duplicateMessage = document.getElementById('duplicateMessage');
+        const duplicateText = document.getElementById('duplicateText');
+        const duplicateList = document.getElementById('duplicateList');
+        const toggleDuplicateList = document.getElementById('toggleDuplicateList');
+        const searchTermsLabel = document.getElementById('searchTermsLabel');
+        const searchTerms = document.getElementById('searchTerms');
+        const genericSearchOptions = document.getElementById('genericSearchOptions');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+        const sortOptions = document.getElementById('sortOptions');
+
+        // Search type radio buttons
+        const articleSearch = document.getElementById('articleSearch');
+        const genericSearch = document.getElementById('genericSearch');
+
+        // Filter options
+        const filterAll = document.getElementById('filterAll');
+        const filterFound = document.getElementById('filterFound');
+        const filterNotFound = document.getElementById('filterNotFound');
+        const filterAvailable = document.getElementById('filterAvailable');
+        const filterUnavailable = document.getElementById('filterUnavailable');
+        const filterDiscounted = document.getElementById('filterDiscounted');
+
+        // Export modal
+        const exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+
+        // Store results for export and real-time updates
+        let allSearchResults = [];
+        let totalFoundProducts = 0;
+        let displayedProducts = 0;
+        let notFoundProducts = 0;
+        let currentRegionInfo = null;
+        let parsedTerms = [];
+        let duplicatesFound = [];
+        let currentSearchSessionId = null;
+        let statusPollingInterval = null;
+        let resultsPollingInterval = null;
+        let isSearchCancelled = false;
+
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+
+        // Set up event listeners
+        searchButton.addEventListener('click', searchProducts);
+        clearSearchButton.addEventListener('click', function() {
+            searchTerms.value = '';
+            searchTerms.focus();
+        });
+
+        clearAllButton.addEventListener('click', clearAll);
+
+        cancelSearchButton.addEventListener('click', function() {
+            if (confirm('Are you sure you want to cancel the current search?')) {
+                cancelCurrentSearch();
+            }
+        });
+
+        checkRegionButton.addEventListener('click', checkRegionInfo);
+
+        resetFiltersButton.addEventListener('click', function() {
+            filterAll.checked = true;
+            sortOptions.value = 'default';
+            filterResults();
+        });
+
+        exportButton.addEventListener('click', function() {
+            exportModal.show();
+        });
+
+        confirmExportButton.addEventListener('click', function() {
+            exportModal.hide();
+
+            let option = 'all';
+            if (document.getElementById('exportFound').checked) option = 'found';
+            else if (document.getElementById('exportNotFound').checked) option = 'notFound';
+            else if (document.getElementById('exportCurrentView').checked) option = 'currentView';
+
+            exportToExcel(option);
+        });
+
+        // Toggle for parsed terms section
+        hideTermsToggle.addEventListener('click', function() {
+            const termsListDiv = parsedTermsList;
+            if (termsListDiv.style.display === 'none') {
+                termsListDiv.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Hide';
+            } else {
+                termsListDiv.style.display = 'none';
+                this.innerHTML = '<i class="fas fa-eye me-1"></i>Show';
+            }
+        });
+
+        // Toggle for duplicate list
+        toggleDuplicateList.addEventListener('click', function() {
+            if (duplicateList.style.display === 'none') {
+                duplicateList.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-eye-slash me-1"></i> Hide Duplicates';
+            } else {
+                duplicateList.style.display = 'none';
+                this.innerHTML = '<i class="fas fa-eye me-1"></i> Show Duplicates';
+            }
+        });
+
+        // Search type listeners
+        articleSearch.addEventListener('change', updateSearchType);
+        genericSearch.addEventListener('change', updateSearchType);
+
+        // Sort options listener
+        sortOptions.addEventListener('change', function() {
+            sortResults(this.value);
+        });
+
+        function updateSearchType() {
+            if (articleSearch.checked) {
+                searchTermsLabel.innerHTML = '<i class="fas fa-barcode me-2"></i>Article Codes:';
+                searchTerms.placeholder = 'Paste article codes in any format (comma-separated, one per line, etc.)';
+                genericSearchOptions.style.display = 'none';
+            } else {
+                searchTermsLabel.innerHTML = '<i class="fas fa-search me-2"></i>Search Terms:';
+                searchTerms.placeholder = 'Enter general search terms like "Water" or "Coffee"';
+                genericSearchOptions.style.display = 'block';
+            }
+        }
+
+        // Filter event listeners
+        [filterAll, filterFound, filterNotFound, filterAvailable, filterUnavailable, filterDiscounted].forEach(
+            filter => filter.addEventListener('change', filterResults)
+        );
+
+        // Check region info when session ID changes or is pasted
+        document.getElementById('sessionId').addEventListener('blur', checkRegionInfo);
+        document.getElementById('sessionId').addEventListener('paste', function() {
+            setTimeout(checkRegionInfo, 100);
+        });
+
+        // Search when Enter key is pressed in search input while Ctrl is held
+        document.getElementById('searchTerms').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                searchProducts();
+            }
+        });
+
+        // Function to clear all results
+        function clearAll() {
+            // Cancel any active search
+            cancelCurrentSearch();
+
+            // Clear search box
+            searchTerms.value = '';
+
+            // Reset results
+            resultsContainer.innerHTML = '';
+            searchInfo.style.display = 'none';
+            exportButton.style.display = 'none';
+            parsedTermsSection.style.display = 'none';
+            filterControls.style.display = 'none';
+            duplicateMessage.style.display = 'none';
+            noResultsMessage.style.display = 'none';
+
+            // Reset global variables
+            allSearchResults = [];
+            totalFoundProducts = 0;
+            displayedProducts = 0;
+            notFoundProducts = 0;
+            parsedTerms = [];
+            duplicatesFound = [];
+            currentSearchSessionId = null;
+
+            // Focus on the search box
+            searchTerms.focus();
+        }
+
+        // Function to cancel current search
+        function cancelCurrentSearch() {
+            isSearchCancelled = true;
+
+            // Clear polling intervals
+            if (statusPollingInterval) {
+                clearInterval(statusPollingInterval);
+                statusPollingInterval = null;
+            }
+            if (resultsPollingInterval) {
+                clearInterval(resultsPollingInterval);
+                resultsPollingInterval = null;
+            }
+
+            // Hide loading UI
+            loadingSpinner.style.display = 'none';
+            progressContainer.style.display = 'none';
+
+            currentSearchSessionId = null;
+        }
+
+        // Main search function
+        function searchProducts() {
+            // Cancel any existing search
+            cancelCurrentSearch();
+            isSearchCancelled = false;
+
+            const sessionId = document.getElementById('sessionId').value.trim();
+            const searchTermsInput = document.getElementById('searchTerms').value.trim();
+            const resultLimit = document.getElementById('resultLimit').value;
+            const searchType = articleSearch.checked ? 'article' : 'generic';
+
+            // Validate inputs
+            if (!sessionId) {
+                alert('Please enter your Voila session ID');
+                return;
+            }
+
+            if (!searchTermsInput) {
+                alert('Please enter at least one search term');
+                return;
+            }
+
+            // Show loading spinner
+            loadingSpinner.style.display = 'block';
+            loadingMessage.textContent = searchType === 'article' ? 'Starting article search...' : 'Starting generic search...';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            progressStatusText.textContent = 'Initializing search...';
+
+            resultsContainer.innerHTML = '';
+            searchInfo.style.display = 'none';
+            exportButton.style.display = 'none';
+            parsedTermsSection.style.display = 'none';
+            filterControls.style.display = 'none';
+            duplicateMessage.style.display = 'none';
+            duplicateList.style.display = 'none';
+            toggleDuplicateList.style.display = 'none';
+            noResultsMessage.style.display = 'none';
+
+            // Reset results
+            allSearchResults = [];
+            totalFoundProducts = 0;
+            displayedProducts = 0;
+            notFoundProducts = 0;
+            parsedTerms = [];
+            duplicatesFound = [];
+
+            // Prepare request payload
+            const payload = {
+                sessionId: sessionId,
+                searchTerm: searchTermsInput,
+                limit: resultLimit,
+                searchType: searchType
+            };
+
+            // Make the request to start search
+            fetch('/api/fetch-product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Store search session ID and start polling
+                currentSearchSessionId = data.search_session_id;
+
+                // Process initial data
+                processInitialResponse(data);
+
+                // Start polling for status and results
+                startPolling();
+            })
+            .catch(error => {
+                if (!isSearchCancelled) {
+                    loadingSpinner.style.display = 'none';
+                    progressContainer.style.display = 'none';
+
+                    searchInfo.style.display = 'block';
+                    searchResultsTitle.textContent = `Error`;
+
+                    console.error('Request error:', error);
+                    resultStats.innerHTML = `<div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Error:</strong> ${error.message}
+                        <hr>
+                        <p>Check your session ID and try again.</p>
+                    </div>`;
+                }
+            });
+        }
+
+        function processInitialResponse(data) {
+            // Store region info if available
+            if (data.region_info) {
+                currentRegionInfo = data.region_info;
+
+                // Update region banner
+                regionInfoBanner.style.display = 'flex';
+                const regionName = data.region_info.nickname || 'Unknown Region';
+                const address = data.region_info.displayAddress || '';
+                const postalCode = data.region_info.postalCode || '';
+
+                regionText.innerHTML = `
+                    <div>
+                        <strong>${regionName}</strong><br>
+                        ${address}<br>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-map-marker-alt me-1"></i>
+                            ${postalCode}
+                        </span>
+                    </div>
+                `;
+            }
+
+            // Display duplicate message if there are duplicates in article search mode
+            if (data.duplicate_count > 0 && data.search_type === 'article') {
+                duplicatesFound = data.duplicates || [];
+
+                duplicateMessage.style.display = 'block';
+                duplicateText.textContent = `Found and removed ${data.duplicate_count} duplicate article code${data.duplicate_count > 1 ? 's' : ''}.`;
+
+                // Show the toggle button if we have duplicates
+                if (duplicatesFound.length > 0) {
+                    toggleDuplicateList.style.display = 'inline-block';
+
+                    // Populate the duplicate list
+                    duplicateList.innerHTML = '';
+                    const dupList = document.createElement('ul');
+                    duplicatesFound.forEach(dup => {
+                        const item = document.createElement('li');
+                        item.textContent = dup;
+                        dupList.appendChild(item);
+                    });
+                    duplicateList.appendChild(dupList);
+                } else {
+                    toggleDuplicateList.style.display = 'none';
+                }
+            } else {
+                duplicateMessage.style.display = 'none';
+                toggleDuplicateList.style.display = 'none';
+            }
+
+            // Display parsed terms if available
+            if (data.parsed_terms && data.parsed_terms.length > 0) {
+                parsedTerms = data.parsed_terms;
+
+                // Show the parsed terms section
+                parsedTermsSection.style.display = 'block';
+                parsedTermsList.innerHTML = '';
+
+                // Create the list of parsed terms
+                const termsList = document.createElement('ul');
+                parsedTerms.forEach(term => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = term;
+                    termsList.appendChild(listItem);
+                });
+
+                parsedTermsList.appendChild(termsList);
+            }
+
+            // Show results section
+            showResultsSection();
+
+            // Show filter controls
+            filterControls.style.display = 'block';
+
+            // Update loading message
+            loadingMessage.textContent = `Processing ${data.total_terms} search terms...`;
+            progressStatusText.textContent = `Processing ${data.total_terms} search terms...`;
+        }
+
+        function startPolling() {
+            if (!currentSearchSessionId) return;
+
+            // Poll for status updates
+            statusPollingInterval = setInterval(() => {
+                if (isSearchCancelled) return;
+
+                fetch(`/api/search-status/${currentSearchSessionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateProgress(data);
+
+                        if (data.status === 'completed' || data.status === 'failed') {
+                            clearInterval(statusPollingInterval);
+                            statusPollingInterval = null;
+
+                            if (data.status === 'completed') {
+                                completeSearch();
+                            } else {
+                                handleSearchError('Search failed on server');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Status polling error:', error);
+                    });
+            }, 1000); // Poll every second
+
+            // Poll for results updates
+            resultsPollingInterval = setInterval(() => {
+                if (isSearchCancelled) return;
+
+                fetch(`/api/search-results/${currentSearchSessionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateResults(data);
+                    })
+                    .catch(error => {
+                        console.error('Results polling error:', error);
+                    });
+            }, 2000); // Poll every 2 seconds for results
+        }
+
+        function updateProgress(statusData) {
+            if (statusData.total_terms > 0) {
+                const percentage = Math.min(100, Math.round((statusData.processed_terms / statusData.total_terms) * 100));
+                progressBar.style.width = `${percentage}%`;
+                progressBar.textContent = `${percentage}%`;
+                progressBar.setAttribute('aria-valuenow', percentage);
+
+                progressStatusText.textContent = `Processed ${statusData.processed_terms} of ${statusData.total_terms} terms`;
+            }
+        }
+
+        function updateResults(resultsData) {
+            if (resultsData.products && resultsData.products.length > allSearchResults.length) {
+                // New results are available
+                const newResults = resultsData.products.slice(allSearchResults.length);
+
+                // Add new results to our collection
+                allSearchResults = resultsData.products;
+
+                // Update counts
+                totalFoundProducts = resultsData.total_found || 0;
+                notFoundProducts = resultsData.not_found_count || 0;
+                displayedProducts = resultsData.total_processed || 0;
+
+                // Display new results with animation
+                newResults.forEach(product => {
+                    addProductToDisplay(product, true); // true for animated
+                });
+
+                // Update stats
+                updateResultsStats();
+
+                // Re-apply filters
+                filterResults();
+            }
+        }
+
+        function addProductToDisplay(product, animated = false) {
+            let cardElement;
+
+            if (product.found) {
+                cardElement = createProductCard(product);
+            } else {
+                cardElement = createNotFoundCard(product);
+            }
+
+            if (animated) {
+                // Add animation class for new results
+                const cardDiv = cardElement.querySelector('.product-card');
+                if (cardDiv) {
+                    cardDiv.classList.add('new-result');
+                    // Remove animation class after animation completes
+                    setTimeout(() => {
+                        cardDiv.classList.remove('new-result');
+                    }, 600);
+                }
+            }
+
+            resultsContainer.appendChild(cardElement);
+        }
+
+        function completeSearch() {
+            // Hide loading spinner
+            loadingSpinner.style.display = 'none';
+            progressContainer.style.display = 'none';
+
+            // Show export button
+            exportButton.style.display = 'block';
+
+            // Clear polling intervals
+            if (statusPollingInterval) {
+                clearInterval(statusPollingInterval);
+                statusPollingInterval = null;
+            }
+            if (resultsPollingInterval) {
+                clearInterval(resultsPollingInterval);
+                resultsPollingInterval = null;
+            }
+
+            // Final update of results
+            if (currentSearchSessionId) {
+                fetch(`/api/search-results/${currentSearchSessionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateResults(data);
+
+                        // Show completion message
+                        const completionAlert = document.createElement('div');
+                        completionAlert.className = 'alert alert-success alert-dismissible fade show';
+                        completionAlert.innerHTML = `
+                            <i class="fas fa-check-circle me-2"></i>
+                            Search completed! Found ${totalFoundProducts} products, ${notFoundProducts} not found.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        `;
+                        searchInfo.querySelector('.card-body').insertBefore(completionAlert, resultsContainer);
+
+                        // Auto-dismiss after 5 seconds
+                        setTimeout(() => {
+                            if (completionAlert.parentNode) {
+                                completionAlert.remove();
+                            }
+                        }, 5000);
+                    })
+                    .catch(error => {
+                        console.error('Final results fetch error:', error);
+                    });
+            }
+        }
+
+        function handleSearchError(errorMessage) {
+            loadingSpinner.style.display = 'none';
+            progressContainer.style.display = 'none';
+
+            searchInfo.style.display = 'block';
+            searchResultsTitle.textContent = `Error`;
+
+            resultStats.innerHTML = `<div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong>Error:</strong> ${errorMessage}
+            </div>`;
+        }
+
+        function showResultsSection() {
+            // Update results title
+            const regionName = currentRegionInfo?.nickname || 'Unknown Region';
+            searchResultsTitle.textContent = `Search Results for ${regionName}`;
+
+            // Show results section
+            searchInfo.style.display = 'block';
+        }
+
+        function updateResultsStats() {
+            // Update stats
+            resultStats.textContent = `Found ${totalFoundProducts} products, ${notFoundProducts} not found, showing ${displayedProducts} total`;
+        }
+
+        // Function to filter results based on radio buttons
+        function filterResults() {
+            let showCondition;
+
+            if (filterAll.checked) {
+                showCondition = () => true;
+            } else if (filterFound.checked) {
+                showCondition = product => product.classList.contains('found-product');
+            } else if (filterNotFound.checked) {
+                showCondition = product => product.classList.contains('not-found-card');
+            } else if (filterAvailable.checked) {
+                showCondition = product => product.classList.contains('found-product') && 
+                                          product.querySelector('.badge-available');
+            } else if (filterUnavailable.checked) {
+                showCondition = product => product.classList.contains('found-product') && 
+                                          product.querySelector('.badge-unavailable');
+            } else if (filterDiscounted.checked) {
+                showCondition = product => product.classList.contains('found-product') && 
+                                          product.querySelector('.discount-badge');
+            }
+
+            // Apply filter to all product cards
+            const allProductCards = document.querySelectorAll('.product-card');
+            let visibleCount = 0;
+
+            allProductCards.forEach(card => {
+                const parentCol = card.closest('.col-md-4, .col-lg-3');
+                if (parentCol) {
+                    if (showCondition(card)) {
+                        parentCol.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        parentCol.style.display = 'none';
+                    }
+                }
+            });
+
+            // Show "no results" message if no products are visible
+            if (visibleCount === 0 && allProductCards.length > 0) {
+                noResultsMessage.style.display = 'block';
+            } else {
+                noResultsMessage.style.display = 'none';
+            }
+
+            // Update results stats
+            resultStats.textContent = `Found ${totalFoundProducts} products, ${notFoundProducts} not found, showing ${visibleCount} of ${displayedProducts} total`;
+        }
+
+        // Function to sort results
+        function sortResults(sortOption) {
+            if (!allSearchResults || allSearchResults.length === 0) return;
+
+            // Clear current results
+            resultsContainer.innerHTML = '';
+
+            // Clone array to avoid modifying the original
+            let sortedResults = [...allSearchResults];
+
+            // Sort based on option
+            switch(sortOption) {
+                case 'priceAsc':
+                    sortedResults.sort((a, b) => {
+                        if (!a.currentPrice) return 1;
+                        if (!b.currentPrice) return -1;
+                        return parseFloat(a.currentPrice) - parseFloat(b.currentPrice);
+                    });
+                    break;
+
+                case 'priceDesc':
+                    sortedResults.sort((a, b) => {
+                        if (!a.currentPrice) return 1;
+                        if (!b.currentPrice) return -1;
+                        return parseFloat(b.currentPrice) - parseFloat(a.currentPrice);
+                    });
+                    break;
+
+                case 'discountDesc':
+                    sortedResults.sort((a, b) => {
+                        const aDiscount = a.discountPercentage || 0;
+                        const bDiscount = b.discountPercentage || 0;
+                        return bDiscount - aDiscount;
+                    });
+                    break;
+
+                case 'nameAsc':
+                    sortedResults.sort((a, b) => {
+                        if (!a.name) return 1;
+                        if (!b.name) return -1;
+                        return a.name.localeCompare(b.name);
+                    });
+                    break;
+
+                case 'nameDesc':
+                    sortedResults.sort((a, b) => {
+                        if (!a.name) return 1;
+                        if (!b.name) return -1;
+                        return b.name.localeCompare(a.name);
+                    });
+                    break;
+
+                case 'default':
+                default:
+                    // For default, keep original order which preserves search order
+                    break;
+            }
+
+            // Re-render results
+            sortedResults.forEach(product => {
+                addProductToDisplay(product, false);
+            });
+
+            // Re-apply filters
+            filterResults();
+        }
+
+        // Function to check region info when session ID is entered
+        function checkRegionInfo() {
+            const sessionId = document.getElementById('sessionId').value.trim();
+
+            if (!sessionId) {
+                regionInfoBanner.style.display = 'none';
+                return;
+            }
+
+            // Show loading message
+            regionInfoBanner.style.display = 'flex';
+            regionText.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div> Checking region information...';
+
+            // Make API request to get region info
+            fetch('/api/fetch-product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionId: sessionId,
+                    searchTerm: 'milk',  // Use a common term just to get region info
+                    limit: 1,  // Only need one result
+                    searchType: 'article' // Use article search type
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    regionInfoBanner.style.display = 'none';
+                    alert(`Error: ${data.error}`);
+                    return;
+                }
+
+                // Extract region info
+                if (data.region_info) {
+                    currentRegionInfo = data.region_info;
+
+                    // Update region banner
+                    regionInfoBanner.style.display = 'flex';
+                    const regionName = data.region_info.nickname || 'Unknown Region';
+                    const address = data.region_info.displayAddress || '';
+                    const postalCode = data.region_info.postalCode || '';
+
+                    regionText.innerHTML = `
+                        <div>
+                            <strong>${regionName}</strong><br>
+                            ${address}<br>
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                ${postalCode}
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    regionInfoBanner.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching region info:', error);
+                regionInfoBanner.style.display = 'flex';
+                regionText.innerHTML = `
+                    <div class="text-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error connecting to Voila</strong><br>
+                        Please check your session ID or try again later.
+                    </div>
+                `;
+            });
+        }
+
+        function createProductCard(product) {
+            const productCard = document.createElement('div');
+            productCard.className = 'col-md-4 col-lg-3 mb-4';
+
+            // Ensure we have a unique ID for each product
+            const uniqueId = product.retailerProductId || product.productId || product.searchTerm;
+            productCard.id = `product-${uniqueId}-${Math.random().toString(36).substring(2, 10)}`;
+
+            // Format price display - Handle non-number values
+            let priceDisplay = '';
+            let discountBadge = '';
+
+            if (product.currentPrice !== null && product.currentPrice !== undefined) {
+                const formattedPrice = typeof product.currentPrice === 'number' 
+                    ? product.currentPrice.toFixed(2) 
+                    : product.currentPrice;
+
+                priceDisplay = `<div class="price-tag">$${formattedPrice}`;
+
+                if (product.discountPercentage) {
+                    discountBadge = `<span class="discount-badge">-${product.discountPercentage}%</span>`;
+                    priceDisplay += discountBadge;
+                }
+
+                priceDisplay += `</div>`;
+
+                if (product.originalPrice && product.originalPrice > product.currentPrice) {
+                    const formattedOriginal = typeof product.originalPrice === 'number'
+                        ? product.originalPrice.toFixed(2)
+                        : product.originalPrice;
+
+                    priceDisplay += `<div class="original-price">$${formattedOriginal}</div>`;
+                }
+            } else {
+                priceDisplay = '<div class="price-tag">Price unavailable</div>';
+            }
+
+            // Format unit price if available
+            let unitPriceDisplay = '';
+            if (product.unitPrice && product.unitLabel) {
+                const formattedUnitPrice = typeof product.unitPrice === 'number'
+                    ? product.unitPrice.toFixed(2)
+                    : product.unitPrice;
+
+                unitPriceDisplay = `<div class="small text-muted">$${formattedUnitPrice} / ${product.unitLabel}</div>`;
+            }
+
+            // Format availability badge with classes for filtering
+            const availabilityClass = product.available ? 'badge-available' : 'badge-unavailable';
+            const availabilityBadge = product.available
+                ? `<span class="badge bg-success ${availabilityClass}">
+                      <i class="fas fa-check-circle me-1"></i>Available
+                   </span>`
+                : `<span class="badge bg-danger ${availabilityClass}">
+                      <i class="fas fa-times-circle me-1"></i>Unavailable
+                   </span>`;
+
+            // Format offers and Scene+ offers
+            let offersDisplay = '';
+            if (product.offers && product.offers.length > 0) {
+                offersDisplay = '<div class="mt-2 mb-2">';
+
+                product.offers.forEach(offer => {
+                    if (offer.description && offer.description.includes('SCENE+')) {
+                        offersDisplay += `<span class="scene-badge">
+                            <i class="fas fa-ticket-alt me-1"></i>${offer.description}</span>`;
+                    } else if (offer.description) {
+                        offersDisplay += `<span class="offer-badge">
+                            <i class="fas fa-tag me-1"></i>${offer.description}</span>`;
+                    }
+                });
+
+                offersDisplay += '</div>';
+            }
+
+            // Add search term badge if available
+            const searchTermBadge = product.searchTerm 
+                ? `<div class="mb-2"><span class="badge bg-info">
+                      <i class="fas fa-search me-1"></i>${product.searchTerm}
+                   </span></div>` 
+                : '';
+
+            productCard.innerHTML = `
+                <div class="card product-card found-product">
+                    <img src="${product.imageUrl || 'https://via.placeholder.com/200x200?text=No+Image'}" 
+                         class="card-img-top product-img" alt="${product.name || 'Product Image'}"
+                         onerror="this.src='https://via.placeholder.com/200x200?text=No+Image'">
+                    <div class="card-body">
+                        <h5 class="card-title">${product.name || 'Unknown Product'}</h5>
+                        <p class="card-text small text-muted">${product.brand || 'Unknown brand'}</p>
+                        ${searchTermBadge}
+                        ${offersDisplay}
+                        <div class="mb-2">
+                            ${priceDisplay}
+                            ${unitPriceDisplay}
+                        </div>
+                        <div>
+                            ${availabilityBadge}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <small class="text-muted">ID: ${product.retailerProductId || product.productId || 'N/A'}</small>
+                    </div>
+                </div>
+            `;
+
+            return productCard;
+        }
+
+        function createNotFoundCard(product) {
+            const notFoundCard = document.createElement('div');
+            notFoundCard.className = 'col-md-4 col-lg-3 mb-4';
+
+            notFoundCard.id = `not-found-${product.searchTerm}-${Math.random().toString(36).substring(2, 10)}`;
+
+            const searchTermBadge = product.searchTerm 
+                ? `<div class="mb-2"><span class="badge bg-info">
+                      <i class="fas fa-search me-1"></i>${product.searchTerm}
+                   </span></div>` 
+                : '';
+
+            notFoundCard.innerHTML = `
+                <div class="card product-card not-found-card">
+                    <div class="card-body text-center">
+                        <div class="py-4">
+                            <i class="fas fa-exclamation-triangle not-found-icon mb-3"></i>
+                            <h5 class="card-title not-found-title">Article Not Found</h5>
+                            ${searchTermBadge}
+                            <p class="card-text not-found-message">
+                                ${product.notFoundMessage || 'This article was not found. It may not be published yet or could be a typo.'}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <small class="text-muted">Search term: ${product.searchTerm || 'N/A'}</small>
+                    </div>
+                </div>
+            `;
+
+            return notFoundCard;
+        }
+
+        function exportToExcel(option = 'all') {
+            if (!allSearchResults || allSearchResults.length === 0) {
+                alert('No results to export');
+                return;
+            }
+
+            // Filter products based on the selected option
+            let productsToExport;
+
+            switch (option) {
+                case 'found':
+                    productsToExport = allSearchResults.filter(p => p.found === true);
+                    break;
+                case 'notFound':
+                    productsToExport = allSearchResults.filter(p => p.found === false);
+                    break;
+                case 'currentView':
+                    // Get currently visible products based on the applied filter
+                    const visibleIds = Array.from(document.querySelectorAll('.col-md-4[style="display: block;"], .col-lg-3[style="display: block;"]'))
+                        .map(col => {
+                            const productCard = col.querySelector('.product-card');
+                            if (productCard.classList.contains('not-found-card')) {
+                                const searchTerm = col.id.replace(/not-found-([^-]+)-.*/, '$1');
+                                return { type: 'notFound', term: searchTerm };
+                            } else {
+                                const id = col.id.replace(/product-([^-]+)-.*/, '$1');
+                                return { type: 'found', id: id };
+                            }
+                        });
+
+                    productsToExport = allSearchResults.filter(product => {
+                        if (product.found === false) {
+                            return visibleIds.some(item => 
+                                item.type === 'notFound' && item.term === product.searchTerm);
+                        } else {
+                            const productId = product.retailerProductId || product.productId || product.searchTerm;
+                            return visibleIds.some(item => 
+                                item.type === 'found' && item.id === productId);
+                        }
+                    });
+                    break;
+                default:
+                    productsToExport = allSearchResults;
+            }
+
+            // Create a new workbook
+            const wb = XLSX.utils.book_new();
+
+            // Prepare data for export
+            const exportData = productsToExport.map(product => {
+                // Format offers for Excel
+                let sceneOffers = '';
+                let otherOffers = '';
+
+                if (product.offers && product.offers.length > 0) {
+                    product.offers.forEach(offer => {
+                        const offerText = offer.description || offer.promotionText || '';
+                        if (offerText && offerText.includes('SCENE+')) {
+                            sceneOffers += (sceneOffers ? ', ' : '') + offerText;
+                        } else if (offerText) {
+                            otherOffers += (otherOffers ? ', ' : '') + offerText;
+                        }
+                    });
+                }
+
+                // Calculate discount percentage if not already done
+                let discountPercentage = product.discountPercentage;
+                if (!discountPercentage && product.originalPrice && product.currentPrice) {
+                    try {
+                        const current = parseFloat(product.currentPrice);
+                        const original = parseFloat(product.originalPrice);
+                        if (original > current) {
+                            discountPercentage = Math.round(
+                                ((original - current) / original) * 100
+                            );
+                        }
+                    } catch (e) {
+                        // Ignore calculation errors
+                    }
+                }
+
+                // Check if this is a not found product
+                if (product.found === false) {
+                    return {
+                        "Search Term": product.searchTerm || 'N/A',
+                        "Product ID": 'NOT_FOUND',
+                        "Name": `Article Not Found: ${product.searchTerm || ''}`,
+                        "Brand": 'N/A',
+                        "Current Price": 'N/A',
+                        "Original Price": 'N/A',
+                        "Discount %": 'N/A',
+                        "Available": 'No',
+                        "Not Found Reason": product.notFoundMessage || 'Article not published or typo'
+                    };
+                }
+
+                // Return formatted row for normal product
+                return {
+                    "Search Term": product.searchTerm || 'N/A',
+                    "Product ID": product.retailerProductId || product.productId || 'N/A',
+                    "Name": product.name || 'N/A',
+                    "Brand": product.brand || 'N/A',
+                    "Current Price": product.currentPrice ? `$${product.currentPrice}` : 'N/A',
+                    "Original Price": product.originalPrice ? `$${product.originalPrice}` : 'N/A',
+                    "Discount %": discountPercentage ? `${discountPercentage}%` : 'N/A',
+                    "Available": product.available ? 'Yes' : 'No',
+                    "Scene+ Offers": sceneOffers || 'None',
+                    "Other Offers": otherOffers || 'None'
+                };
+            });
+
+            // Convert to worksheet
+            const ws = XLSX.utils.json_to_sheet(exportData);
+
+            // Add the worksheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Products');
+
+            // Get timestamp for filename
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+            // Get region info for filename
+            const regionName = currentRegionInfo?.nickname || 'Unknown';
+            const postalCode = currentRegionInfo?.postalCode || '';
+
+            // Create a descriptive filename with region details
+            const filename = `Voila-${regionName}-${postalCode}-Products-${timestamp}.xlsx`;
+
+            // Generate Excel file
+            XLSX.writeFile(wb, filename);
+        }
+    });
+</script>
+</body>
+</html>
